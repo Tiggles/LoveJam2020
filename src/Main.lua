@@ -1,12 +1,13 @@
-local next_event = love.timer.getTime() + 10
+local next_event = 0
+local next_frequency_update = 0
 local initial_height = 600
 local initial_width = 800
 local points = 9999
 local max_points = 999
-local frequency_range = 1037 - 887
+local frequency_range = 103.7 - 88.7
 local current_frequency = 0
-local frequency_offset = 887
-local frequency_max = 1037
+local frequency_offset = 88.7
+local frequency_max = 103.7
 local start_rect = {
     width = 80,
     height = 30,
@@ -70,14 +71,24 @@ end
 
 function Game_loop(delta)
     Set_points(-delta * 10)
+    if next_frequency_update < love.timer.getTime() then
+        if love.keyboard.isDown("up") then
+            Update_frequency(0.1)
+            next_frequency_update = love.timer.getTime() + 0.1
+        elseif love.keyboard.isDown("down") then
+            Update_frequency(-0.1)
+            next_frequency_update = love.timer.getTime() + 0.1
+        end
+    end
 end
 
 function Menu_update(delta)
-    if love.mouse.isDown(1) then
+    if love.mouse.isDown(1) or love.keyboard.isDown("return") then
         local x, y = love.mouse.getPosition()
         if Is_inside({x = x, y = y}, start_rect) then
             update_loop = Game_loop
             draw_loop = Game_draw
+            next_event = love.timer.getTime() + 10
         end
     end
 end
@@ -130,8 +141,22 @@ function Game_draw()
         Draw_outline(chocolate_collision_box)
         Draw_outline(licorice_collision_box)
     end
+
+    local freq = Frequency()
+    if freq % 1 == 0 then
+        freq = freq .. ".0"
+    end
+    love.graphics.print(freq, 50, 50)
 end
 
 function Fail_draw()
 
+end
+
+function Frequency()
+    return (current_frequency + frequency_offset)
+end
+
+function Update_frequency(add_freq)
+    current_frequency = (current_frequency + add_freq) % (frequency_max - frequency_offset)
 end
