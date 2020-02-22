@@ -38,8 +38,10 @@ function love.resize(width, height)
 end
 
 function love.draw()
-    draw_outline(chocolate_collision_box)
-    draw_outline(licorice_collision_box)
+    if debug then
+        draw_outline(chocolate_collision_box)
+        draw_outline(licorice_collision_box)
+    end
 end
 
 function draw_outline(box)
