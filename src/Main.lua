@@ -2,12 +2,12 @@ local next_event = 0
 local next_frequency_update = 0
 local initial_height = 600
 local initial_width = 800
-local points = 9999
 local max_points = 999
-local frequency_range = 103.7 - 88.7
-local current_frequency = 0
+local points = max_points
 local frequency_offset = 88.7
 local frequency_max = 103.7
+local frequency_range = frequency_max - frequency_offset
+local current_frequency = 0
 local start_rect = {
     width = 80,
     height = 30,
@@ -137,7 +137,6 @@ end
 function Game_draw()
     if debug then
         love.graphics.print(math.floor(points), 5, 5)
-        love.graphics.print(frequency_range, 15, 10)
         Draw_outline(chocolate_collision_box)
         Draw_outline(licorice_collision_box)
     end
@@ -150,7 +149,7 @@ function Game_draw()
 end
 
 function Fail_draw()
-
+    love.graphics.print("Dad got mad. You failed.")
 end
 
 function Frequency()
