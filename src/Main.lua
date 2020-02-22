@@ -1,6 +1,16 @@
 local next_event = love.timer.getTime() + 10
 local initial_height = 600
 local initial_width = 800
+local points = 9999
+local max_points = 999
+local frequency_range = 1037 - 887
+local current_frequency = 123
+
+local dad = {
+    last_candy = nil,
+    expecting_candy = false,
+    prompting_for_directions = false
+}
 
 local chocolate_collision_box = {
     x = 20,
@@ -26,10 +36,26 @@ function love.load()
         vsync = 1,
         resizable  = true
     })
+
+    --[[ 
+        TODO: Add music
+        TODO: Add static
+    ]]
 end
 
-function love.update(delta)
+--[[
+    TODO: Start screen
+]]
 
+--[[
+    TODO: Fail state
+]]
+
+function love.update(delta)
+    if love.keyboard.isDown("escape") then
+        love.event.quit()
+    end
+    Set_points(-delta * 10)
 end
 
 function love.resize(width, height)
@@ -39,12 +65,14 @@ end
 
 function love.draw()
     if debug then
-        draw_outline(chocolate_collision_box)
-        draw_outline(licorice_collision_box)
+        love.graphics.print(math.floor(points), 5, 5)
+        love.graphics.print(frequency_range, 15, 10)
+        Draw_outline(chocolate_collision_box)
+        Draw_outline(licorice_collision_box)
     end
 end
 
-function draw_outline(box)
+function Draw_outline(box)
     love.graphics.rectangle(
         "line",
         box.x * scale_x,
@@ -52,4 +80,18 @@ function draw_outline(box)
         box.width * scale_x,
         box.height * scale_y
     )
+end
+
+function Draw_filled(box)
+    love.graphics.rectangle(
+        "fill",
+        box.x * scale_x,
+        box.y * scale_y,
+        box.width * scale_x,
+        box.height * scale_y
+    )
+end
+
+function Set_points(extra_points)
+    points = math.max(math.min(points + extra_points, max_points), -1)
 end
