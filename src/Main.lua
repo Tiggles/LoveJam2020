@@ -234,6 +234,14 @@ function Game_draw()
 
     love.graphics.print("Remaining happiness: " .. math.floor(points), 5 * scale_x, 5 * scale_y, 0, scale_x, scale_y)
 
+    if dad.expecting_candy then
+        love.graphics.draw(arm_image, 0, 4, 0, scale_x, scale_y)
+    end
+
+    love.graphics.draw(point_of_reference_images["water tower"], 404 * scale_x, 143 * scale_y, 0, scale_x * some_val, scale_y  * some_val, 51, 86)
+
+    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
+
     -- Draw directions
     love.graphics.rectangle("fill", (initial_width / 4) * scale_x, directions.y * scale_y, 400 * scale_x, (initial_height - 120) * scale_y, 0, scale_x, scale_y)
     love.graphics.setColor(0, 0, 0)
@@ -248,14 +256,6 @@ function Game_draw()
     end
     love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
     love.graphics.setColor(1, 1, 1)
-
-    if dad.expecting_candy then
-        love.graphics.draw(arm_image, 0, 4, 0, scale_x, scale_y)
-    end
-
-    love.graphics.draw(point_of_reference_images["water tower"], 404 * scale_x, 143 * scale_y, 0, scale_x * some_val, scale_y  * some_val, 51, 86)
-
-    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
 end
 
 function Fail_draw()
