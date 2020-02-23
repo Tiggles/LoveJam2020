@@ -15,12 +15,25 @@ local start_rect = {
     y = initial_height - 40
 }
 local directions = {
-    max_y = initial_height * 0.2,
+    max_y = initial_height * 0.6,
     min_y = initial_height + 10,
     y = initial_height + 10,
-    notes = {
+    notes = {}
+}
 
-    }
+local RIGHT = 0
+local LEFT = 1
+
+local point_of_reference_options = {
+    "water tower",
+    "tree",
+    "gas station",
+    "hotel",
+    "windmill",
+    "barn",
+    "lighthouse",
+    "woods",
+    "train"
 }
 
 local update_loop
@@ -57,6 +70,7 @@ local scale_y = 1
 local debug = true
 
 function love.load()
+    Populate_Directions()
     car_image = love.graphics.newImage("car.png")
     update_loop = Menu_update
     draw_loop = Menu_draw
@@ -118,7 +132,7 @@ end
 function Menu_update(delta)
     if love.mouse.isDown(1) or love.keyboard.isDown("return") then
         local x, y = love.mouse.getPosition()
-        if Is_inside({x = x, y = y}, start_rect) then
+        if Is_inside({x = x, y = y}, {x = start_rect.x * scale_x, y = start_rect.y * scale_y, width = start_rect.width, height = start_rect.height}) then
             update_loop = Game_loop
             draw_loop = Game_draw
             next_event = love.timer.getTime() + 10
@@ -168,32 +182,40 @@ function Menu_draw()
 end
 
 function Game_draw()
-    love.graphics.draw(car_image, 0, 0)
+    love.graphics.draw(car_image, 0, 0, 0, scale_x, scale_y)
 
     if debug then
-        love.graphics.print(math.floor(points), 5, 5)
         Draw_outline(chocolate_collision_box)
         Draw_outline(licorice_collision_box)
     end
 
-    love.graphics.rectangle("fill", initial_width / 4, directions.y, 400, initial_height - 120)
+    love.graphics.print("Remaining happiness: " .. math.floor(points), 5 * scale_x, 5 * scale_y, 0, scale_x, scale_y)
+
+    -- Draw directions
+    love.graphics.rectangle("fill", (initial_width / 4) * scale_x, directions.y * scale_y, 400 * scale_x, (initial_height - 120) * scale_y, 0, scale_x, scale_y)
+    love.graphics.setColor(0, 0, 0)
+    for i = 0, #directions.notes -1 do
+        local note = directions.notes[i]
+        love.graphics.print(Direction_to_string(note.direction) .. " at " .. note.point_of_reference, (initial_width / 4 + 30) * scale_x, (directions.y + 30 + 20 * i) * scale_y, 0, scale_x, scale_y)
+    end
 
     local freq = Frequency()
-    if freq > 100 then
-        print(freq % 1)
-    end
     if freq % 1 == 0 then
         freq = freq .. ".0"
     end
-    love.graphics.print(freq, 50, 50)
+    love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
+    love.graphics.setColor(1, 1, 1)
 end
 
 function Fail_draw()
-    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) * scale_y)
+    love.graphics.print("Dad got mad. You failed. " .. points, (initial_width / 2 - 80)  * scale_x, (initial_height / 2) * scale_y)
+    love.graphics.print("Press space to try again.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) + 20 * scale_y)
 end
 
 function Fail_loop(delta)
-    -- TODO
+    if love.keyboard.isDown("return") then
+        love.event.quit("restart")
+    end
 end
 
 function Frequency()
@@ -207,4 +229,37 @@ end
 function Mouse_coordinates()
     local x, y = love.mouse.getPosition()
     return x * scale_x, y * scale_y
+end
+
+function New_dir_pair()
+    return {
+        direction = Random_Direction(),
+        point_of_reference = Random_PoI()
+    }
+end
+
+function Random_Direction()
+    if math.random() > 0.5 then
+        return LEFT
+    else
+        return RIGHT
+    end
+end
+
+function Random_PoI()
+    return point_of_reference_options[math.random(1, #point_of_reference_options)]
+end
+
+function Populate_Directions()
+    for i = 0, 8 do
+        directions.notes[i] = New_dir_pair()
+    end
+end
+
+function Direction_to_string(dir)
+    if dir == LEFT then
+        return "Left"
+    else
+        return "Right"
+    end
 end
