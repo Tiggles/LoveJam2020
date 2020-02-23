@@ -156,7 +156,7 @@ function Menu_update(delta)
         end
     end
 
-    if love.keyboard.isDown("return") then 
+    if love.keyboard.isDown("return") then
         update_loop = Game_loop
         draw_loop = Game_draw
         next_event = love.timer.getTime() + 10
@@ -230,7 +230,7 @@ function Game_draw()
     love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
     love.graphics.setColor(1, 1, 1)
 
-    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391, 143)
+    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
 end
 
 function Fail_draw()
