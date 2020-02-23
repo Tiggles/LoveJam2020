@@ -39,7 +39,13 @@ local point_of_reference_options = {
 local update_loop
 local draw_loop
 
+local stripes = {}
+local stripes_anim_count = 22
+local stripes_anim_current = 0
+local strips_anim_length = 0.001
+local anim_tick_counter = 0
 local car_image
+local wind_shield
 
 function Reset_dad()
     return {
@@ -65,6 +71,8 @@ local licorice_collision_box = {
     height = 60
 }
 
+local stripes_img = love.graphics.newImage("stripes.png")
+
 local scale_x = 1
 local scale_y = 1
 local debug = true
@@ -72,6 +80,10 @@ local debug = true
 function love.load()
     Populate_Directions()
     car_image = love.graphics.newImage("car.png")
+    wind_shield = love.graphics.newImage("windshield.png")
+    for i = 0, stripes_anim_count do
+        stripes[i] = love.graphics.newQuad(30 * i, 0, 30, 60, stripes_img:getDimensions())
+    end
     update_loop = Menu_update
     draw_loop = Menu_draw
     love.window.setTitle("Road trip")
@@ -127,16 +139,27 @@ function Game_loop(delta)
             next_frequency_update = love.timer.getTime() + 0.1
         end
     end
+    anim_tick_counter = anim_tick_counter + delta
+    if anim_tick_counter > strips_anim_length then
+        stripes_anim_current = (stripes_anim_current + 1) % stripes_anim_count
+    end
+    anim_tick_counter = anim_tick_counter % strips_anim_length
 end
 
 function Menu_update(delta)
-    if love.mouse.isDown(1) or love.keyboard.isDown("return") then
+    if love.mouse.isDown(1) then
         local x, y = love.mouse.getPosition()
         if Is_inside({x = x, y = y}, {x = start_rect.x * scale_x, y = start_rect.y * scale_y, width = start_rect.width, height = start_rect.height}) then
             update_loop = Game_loop
             draw_loop = Game_draw
             next_event = love.timer.getTime() + 10
         end
+    end
+
+    if love.keyboard.isDown("return") then 
+        update_loop = Game_loop
+        draw_loop = Game_draw
+        next_event = love.timer.getTime() + 10
     end
 end
 
@@ -183,6 +206,7 @@ end
 
 function Game_draw()
     love.graphics.draw(car_image, 0, 0, 0, scale_x, scale_y)
+    love.graphics.draw(wind_shield, 0, 0, 0, scale_x, scale_y)
 
     if debug then
         Draw_outline(chocolate_collision_box)
@@ -200,11 +224,13 @@ function Game_draw()
     end
 
     local freq = Frequency()
-    if freq % 1 == 0 then
+    if math.abs(freq % 1) < 0.1 then
         freq = freq .. ".0"
     end
     love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
     love.graphics.setColor(1, 1, 1)
+
+    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391, 143)
 end
 
 function Fail_draw()
@@ -212,7 +238,7 @@ function Fail_draw()
     love.graphics.print("Press space to try again.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) + 20 * scale_y)
 end
 
-function Fail_loop(delta)
+function Fail_loop()
     if love.keyboard.isDown("return") then
         love.event.quit("restart")
     end
