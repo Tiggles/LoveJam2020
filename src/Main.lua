@@ -1,3 +1,4 @@
+local some_val = 0
 local next_event = 0
 local distance_to_next_directions = 1
 local next_frequency_update = 0
@@ -25,6 +26,8 @@ local directions = {
 local RIGHT = 0
 local LEFT = 1
 
+local point_of_reference_images = {}
+
 local point_of_reference_options = {
     "water tower",
     "tree",
@@ -49,7 +52,7 @@ local car_image
 local wind_shield
 local arm_image
 
-function Reset_dad()
+function Initial_dad()
     return {
         last_candy = nil,
         expecting_candy = false,
@@ -57,7 +60,7 @@ function Reset_dad()
     }
 end
 
-local dad = Reset_dad()
+local dad = Initial_dad()
 
 local chocolate_collision_box = {
     x = 160,
@@ -84,6 +87,7 @@ function love.load()
     car_image = love.graphics.newImage("car.png")
     wind_shield = love.graphics.newImage("windshield.png")
     arm_image = love.graphics.newImage("arm.png")
+    point_of_reference_images["water tower"] = love.graphics.newImage("watertower.png")
     for i = 0, stripes_anim_count do
         stripes[i] = love.graphics.newQuad(30 * i, 0, 30, 60, stripes_img:getDimensions())
     end
@@ -109,6 +113,7 @@ function love.update(delta)
 end
 
 function Game_loop(delta)
+    some_val = some_val + 0.1 * delta
     next_event = next_event - delta
     print(next_event)
     if next_event < love.timer.getTime() then
@@ -248,12 +253,14 @@ function Game_draw()
         love.graphics.draw(arm_image, 0, 4, 0, scale_x, scale_y)
     end
 
+    love.graphics.draw(point_of_reference_images["water tower"], 404 * scale_x, 143 * scale_y, 0, scale_x * some_val, scale_y  * some_val, 51, 86)
+
     love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
 end
 
 function Fail_draw()
-    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) * scale_y)
-    love.graphics.print("Press space to try again.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) + 20 * scale_y)
+    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80) * scale_x, (initial_height / 2) * scale_y)
+    love.graphics.print("Press space to try again.", (initial_width / 2 - 80) * scale_x, (initial_height / 2) + 20 * scale_y)
 end
 
 function Fail_loop()
