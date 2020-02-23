@@ -1,4 +1,5 @@
 local next_event = 0
+local distance_to_next_directions = 1
 local next_frequency_update = 0
 local initial_height = 600
 local initial_width = 800
@@ -46,6 +47,7 @@ local strips_anim_length = 0.001
 local anim_tick_counter = 0
 local car_image
 local wind_shield
+local arm_image
 
 function Reset_dad()
     return {
@@ -81,6 +83,7 @@ function love.load()
     Populate_Directions()
     car_image = love.graphics.newImage("car.png")
     wind_shield = love.graphics.newImage("windshield.png")
+    arm_image = love.graphics.newImage("arm.png")
     for i = 0, stripes_anim_count do
         stripes[i] = love.graphics.newQuad(30 * i, 0, 30, 60, stripes_img:getDimensions())
     end
@@ -106,6 +109,13 @@ function love.update(delta)
 end
 
 function Game_loop(delta)
+    next_event = next_event - delta
+    print(next_event)
+    if next_event < love.timer.getTime() then
+        Set_event(dad)
+        next_event = love.timer.getTime() + math.random(15, 20)
+    end
+    
     -- TODO, Wraparound
     Set_points(-delta * 10 - math.abs(target_frequency - current_frequency) * delta)
     if points < 0 then
@@ -122,10 +132,14 @@ function Game_loop(delta)
     if love.mouse.isDown(1) then
         local x, y = Mouse_coordinates()
         if Is_inside({x = x, y = y}, chocolate_collision_box) then
-            print("Chocolate")
+            if dad.expecting_candy then
+                Give_candy(dad, "chocolate")
+            end
         end
         if Is_inside({x = x, y = y}, licorice_collision_box) then
-            print("Licorice")
+            if dad.expecting_candy then
+                Give_candy(dad, "licorice")
+            end
         end
     end
 
@@ -152,14 +166,14 @@ function Menu_update(delta)
         if Is_inside({x = x, y = y}, {x = start_rect.x * scale_x, y = start_rect.y * scale_y, width = start_rect.width, height = start_rect.height}) then
             update_loop = Game_loop
             draw_loop = Game_draw
-            next_event = love.timer.getTime() + 10
+            next_event = love.timer.getTime() + 2
         end
     end
 
     if love.keyboard.isDown("return") then
         update_loop = Game_loop
         draw_loop = Game_draw
-        next_event = love.timer.getTime() + 10
+        next_event = love.timer.getTime() + 2
     end
 end
 
@@ -224,17 +238,21 @@ function Game_draw()
     end
 
     local freq = Frequency()
-    if math.abs(freq % 1) < 0.1 then
+    if freq % 1 == 0 then
         freq = freq .. ".0"
     end
     love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
     love.graphics.setColor(1, 1, 1)
 
+    if dad.expecting_candy then
+        love.graphics.draw(arm_image, 0, 4, 0, scale_x, scale_y)
+    end
+
     love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
 end
 
 function Fail_draw()
-    love.graphics.print("Dad got mad. You failed. " .. points, (initial_width / 2 - 80)  * scale_x, (initial_height / 2) * scale_y)
+    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) * scale_y)
     love.graphics.print("Press space to try again.", (initial_width / 2 - 80)  * scale_x, (initial_height / 2) + 20 * scale_y)
 end
 
@@ -288,4 +306,18 @@ function Direction_to_string(dir)
     else
         return "Right"
     end
+end
+
+function Set_event(dad)
+    dad.expecting_candy = true
+end
+
+function Give_candy(dad, candy)
+    if dad.last_candy == candy then
+        Set_points(-200)
+    else
+        Set_points(50)
+    end
+    dad.last_candy = candy
+    dad.expecting_candy = false
 end
