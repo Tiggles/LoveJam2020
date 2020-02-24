@@ -175,7 +175,6 @@ function Game_loop(delta)
     next_event = next_event - delta
     if next_event < love.timer.getTime() then
         Set_event(dad)
-        next_event = love.timer.getTime() + math.random(15, 20)
     end
 
     Set_points((-delta * 10 - frequency_diff * 5 * delta) * stage)
@@ -246,7 +245,6 @@ function Game_loop(delta)
         end
     end
 
-    -- MAYBE THIS FIXES IT!
     if directions.current_direction > #directions.notes then
         Populate_Directions()
         stage = stage + 1
@@ -389,7 +387,6 @@ function Random_Direction()
 end
 
 function Random_PoI()
-    print(math.random(1, #point_of_reference_options))
     return point_of_reference_options[math.random(1, #point_of_reference_options)]
 end
 
@@ -419,6 +416,7 @@ function Give_candy(dad, candy)
     end
     dad.last_candy = candy
     dad.expecting_candy = false
+    next_event = love.timer.getTime() + math.random(15, 20)
 end
 
 function New_target_frequency()
