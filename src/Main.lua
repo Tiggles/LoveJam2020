@@ -1,3 +1,6 @@
+local happy_eyes
+local demon_eyes
+local angry_eyes
 local stage = 1
 local next_event = 0
 local distance_to_next_directions = 10
@@ -12,11 +15,13 @@ local frequency_max = 108.0
 local current_frequency = 6.7
 local target_frequency = current_frequency
 local twin_road
+local arrow
+local failure
 local start_rect = {
-    width = 80,
+    width = 100,
     height = 30,
-    x = initial_width / 2 - 40,
-    y = initial_height - 40
+    x = initial_width / 2 - 55,
+    y = initial_height / 2 + 70
 }
 local directions = {
     current_direction = 0,
@@ -32,6 +37,8 @@ local music = {}
 
 local RIGHT = 0
 local LEFT = 1
+
+local menu_image
 
 local point_of_reference_images = {}
 
@@ -68,14 +75,14 @@ end
 local dad = Initial_dad()
 
 local direction_left_box = {
-    x = 360,
+    x = 365,
     y = 155,
     width = 20,
     height = 40
 }
 
 local direction_right_box = {
-    x = 425,
+    x = 430,
     y = 155,
     width = 20,
     height = 40
@@ -108,6 +115,13 @@ function love.load()
     wind_shield = love.graphics.newImage("windshield.png")
     arm_image = love.graphics.newImage("arm.png")
     twin_road = love.graphics.newImage("twin_road.png")
+    menu_image = love.graphics.newImage("menu.png")
+    arrow = love.graphics.newImage("arrow.png")
+    failure = love.graphics.newImage("failure.png")
+
+    angry_eyes = love.graphics.newImage("angry_eyes.png")
+    happy_eyes = love.graphics.newImage("happy_eyes.png")
+    demon_eyes = love.graphics.newImage("demon_eyes.png")
 
     music[0] = love.audio.newSource("rock1.wav", "static")
     music[1] = love.audio.newSource("rock2.mp3", "static")
@@ -305,7 +319,12 @@ function Is_inside(vec, rect)
 end
 
 function Menu_draw()
+    love.graphics.draw(menu_image)
+    local r, g, b, a = love.graphics.getColor()
+    love.graphics.setColor(0.1, 0.1, 0.7)
     Draw_filled(start_rect)
+    love.graphics.setColor(r, g, b, a)
+    love.graphics.print("Click to start", start_rect.x + 12, start_rect.y + 8)
 end
 
 function Game_draw()
@@ -316,8 +335,6 @@ function Game_draw()
         Draw_outline(chocolate_collision_box)
         Draw_outline(licorice_collision_box)
     end
-
-    love.graphics.print("Remaining happiness: " .. math.floor(points), 5, 5, 0)
 
     if dad.expecting_candy then
         love.graphics.draw(arm_image, 0, 4, 0)
@@ -342,19 +359,31 @@ function Game_draw()
     love.graphics.setColor(1, 1, 1)
 
     if dad.prompting_for_directions then
-
         love.graphics.draw(twin_road, 0, 0, 0)
-        Draw_filled(direction_left_box)
-        Draw_filled(direction_right_box)
+        love.graphics.draw(arrow, direction_left_box.x, direction_left_box.y)
+        love.graphics.draw(arrow, direction_right_box.x, direction_right_box.y)
+    end
+
+    if points < 200 then
+        love.graphics.draw(demon_eyes)
+    elseif points < 650 then
+        love.graphics.draw(angry_eyes)
+    else
+        love.graphics.draw(happy_eyes)
     end
 end
 
 function Fail_draw()
-    love.graphics.print("You made it to stage " .. stage .. ", but then dad got mad.", (initial_width / 2 - 130), (initial_height / 2))
-    love.graphics.print("Press enter to try again.", (initial_width / 2 - 80), (initial_height / 2) + 20)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(failure)
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.print("You made it to stage " .. stage .. ", but then dad got mad.", (initial_width / 2 - 130), (initial_height / 2 + 130))
+    love.graphics.print("Press enter to try again.", (initial_width / 2 - 80), (initial_height / 2) + 150)
 end
 
 function Fail_loop()
+    music[0]:stop()
+    music[1]:stop()
     if love.keyboard.isDown("return") then
         love.event.quit("restart")
     end
