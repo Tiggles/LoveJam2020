@@ -15,7 +15,7 @@ with the up and down buttons.
 You have the directions written on a page, that you can look at by holding space down. When your dad prompts you for directions,
 click on the direction that matches the directions on the page.
 
-## Made with Löve
+## Made with Löve 11.3
 
 ## Music used:
 
