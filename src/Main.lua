@@ -1,6 +1,6 @@
-local some_val = 0
+local stage = 1
 local next_event = 0
-local distance_to_next_directions = 1200
+local distance_to_next_directions = 10
 local next_frequency_change
 local next_frequency_update = 0
 local initial_height = 600
@@ -11,6 +11,7 @@ local frequency_offset = 87.5
 local frequency_max = 108.0
 local current_frequency = 6.7
 local target_frequency = current_frequency
+local twin_road
 local start_rect = {
     width = 80,
     height = 30,
@@ -18,6 +19,7 @@ local start_rect = {
     y = initial_height - 40
 }
 local directions = {
+    current_direction = 0,
     max_y = initial_height * 0.6,
     min_y = initial_height + 10,
     y = initial_height + 10,
@@ -37,12 +39,10 @@ local point_of_reference_options = {
     "water tower",
     "tree",
     "gas station",
-    "hotel",
+    "hotel", -- todo
     "windmill",
-    "barn",
-    "lighthouse",
-    "woods",
-    "train"
+    "barn", -- todo
+    "lighthouse" -- todo
 }
 
 local update_loop
@@ -92,6 +92,7 @@ function love.load()
     car_image = love.graphics.newImage("car.png")
     wind_shield = love.graphics.newImage("windshield.png")
     arm_image = love.graphics.newImage("arm.png")
+    twin_road = love.graphics.newImage("twin_road.png")
 
     music[0] = love.audio.newSource("rock1.wav", "static")
     music[1] = love.audio.newSource("rock2.mp3", "static")
@@ -99,6 +100,9 @@ function love.load()
     music[1]:setLooping(false)
     static = love.audio.newSource( "static.wav", "static")
     point_of_reference_images["water tower"] = love.graphics.newImage("watertower.png")
+    point_of_reference_images["tree"] = love.graphics.newImage("tree.png")
+    point_of_reference_images["gas station"] = love.graphics.newImage("gas station.png")
+    point_of_reference_images["windmill"] = love.graphics.newImage("windmill.png")
     for i = 0, stripes_anim_count do
         stripes[i] = love.graphics.newQuad(30 * i, 0, 30, 60, stripes_img:getDimensions())
     end
@@ -120,6 +124,12 @@ end
 
 function Game_loop(delta)
 
+    distance_to_next_directions = math.max(distance_to_next_directions - delta, -1)
+
+    if distance_to_next_directions < 0 then
+        dad.prompting_for_directions = true
+    end
+
     if love.timer.getTime() > next_frequency_change then
         New_target_frequency()
     end
@@ -137,7 +147,6 @@ function Game_loop(delta)
     end
 
     local frequency_diff = math.abs(target_frequency - current_frequency)
-    print(frequency_diff)
     if frequency_diff == 0 then
         music[current_music]:setVolume(1)
     elseif frequency_diff > 0.5 then
@@ -146,15 +155,13 @@ function Game_loop(delta)
         music[current_music]:setVolume(math.max(1 - (frequency_diff / 10) * 2), 0)
     end
 
-    some_val = some_val + 0.1 * delta
     next_event = next_event - delta
     if next_event < love.timer.getTime() then
         Set_event(dad)
         next_event = love.timer.getTime() + math.random(15, 20)
     end
-    
-    -- TODO, Wraparound
-    Set_points(-delta * 10 - frequency_diff * 5 * delta)
+
+    Set_points((-delta * 10 - frequency_diff * 5 * delta) * stage)
     if points < 0 then
         update_loop = Fail_loop
         draw_loop = Fail_draw
@@ -271,7 +278,8 @@ function Game_draw()
         love.graphics.draw(arm_image, 0, 4, 0, scale_x, scale_y)
     end
 
-    love.graphics.draw(point_of_reference_images["water tower"], 404 * scale_x, 143 * scale_y, 0, scale_x * some_val, scale_y  * some_val, 51, 86)
+    local next_point_of_reference = point_of_reference_images[directions.notes[directions.current_direction].point_of_reference]
+    love.graphics.draw(next_point_of_reference, 404 * scale_x, 143 * scale_y, 0, scale_x * (1 - (distance_to_next_directions / 10)) , scale_y  * (1 - (distance_to_next_directions / 10)), 51, 86)
 
     love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
 
@@ -286,6 +294,10 @@ function Game_draw()
     local freq = Frequency()
     love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
     love.graphics.setColor(1, 1, 1)
+
+    if dad.prompting_for_directions then
+        love.graphics.draw(twin_road, 0, 0, 0, scale_x, scale_y)
+    end
 end
 
 function Fail_draw()
