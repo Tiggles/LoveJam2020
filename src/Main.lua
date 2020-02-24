@@ -1,6 +1,7 @@
 local some_val = 0
 local next_event = 0
 local distance_to_next_directions = 1200
+local next_frequency_change
 local next_frequency_update = 0
 local initial_height = 600
 local initial_width = 800
@@ -22,7 +23,7 @@ local directions = {
     y = initial_height + 10,
     notes = {}
 }
-local current_music = math.random(1, 2)
+local current_music = math.random(0, 1)
 
 local static
 local music = {}
@@ -118,9 +119,14 @@ function love.update(delta)
 end
 
 function Game_loop(delta)
+
+    if love.timer.getTime() > next_frequency_change then
+        New_target_frequency()
+    end
+
     static:play()
     if not music[0]:isPlaying() and not music[1]:isPlaying() then
-        current_music = current_music % 2
+        current_music = (current_music + 1) % 2
         music[current_music]:play()
     end
 
@@ -131,11 +137,13 @@ function Game_loop(delta)
     end
 
     local frequency_diff = math.abs(target_frequency - current_frequency)
-
+    print(frequency_diff)
     if frequency_diff == 0 then
         music[current_music]:setVolume(1)
+    elseif frequency_diff > 0.5 then
+        music[current_music]:setVolume(0)
     else
-        music[current_music]:setVolume(1 - frequency_diff * 2)
+        music[current_music]:setVolume(math.max(1 - (frequency_diff / 10) * 2), 0)
     end
 
     some_val = some_val + 0.1 * delta
@@ -146,7 +154,7 @@ function Game_loop(delta)
     end
     
     -- TODO, Wraparound
-    Set_points(-delta * 10 - math.abs(target_frequency - current_frequency) * delta)
+    Set_points(-delta * 10 - frequency_diff * 5 * delta)
     if points < 0 then
         update_loop = Fail_loop
         draw_loop = Fail_draw
@@ -196,6 +204,7 @@ function Menu_update(delta)
             update_loop = Game_loop
             draw_loop = Game_draw
             next_event = love.timer.getTime() + 2
+            next_frequency_change = love.timer.getTime() + math.random(2, 10)
         end
     end
 
@@ -348,4 +357,9 @@ function Give_candy(dad, candy)
     end
     dad.last_candy = candy
     dad.expecting_candy = false
+end
+
+function New_target_frequency()
+    target_frequency = math.max(math.min(math.random(current_frequency - 0.6, current_frequency + 0.6), frequency_max - frequency_offset), 0)
+    next_frequency_change = love.timer.getTime() + math.random(20, 30)
 end
