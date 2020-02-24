@@ -97,7 +97,7 @@ local licorice_collision_box = {
 
 local stripes_img
 
-local debug = true
+local debug = false
 
 function love.load()
     math.randomseed(os.time())
@@ -267,6 +267,7 @@ function Menu_update(delta)
         update_loop = Game_loop
         draw_loop = Game_draw
         next_event = love.timer.getTime() + 2
+        next_frequency_change = love.timer.getTime() + math.random(2, 10)
     end
 end
 
@@ -330,6 +331,7 @@ function Game_draw()
     -- Draw directions
     love.graphics.rectangle("fill", (initial_width / 4), directions.y, 400, (initial_height - 120), 0)
     love.graphics.setColor(0, 0, 0)
+    love.graphics.print("Page " .. stage, (initial_width * 0.68), directions.y + 5)
     for i = 0, #directions.notes do
         local note = directions.notes[i]
         love.graphics.print(Direction_to_string(note.direction) .. " at " .. note.point_of_reference, (initial_width / 4 + 30), (directions.y + 30 + 20 * i), 0)
@@ -348,8 +350,8 @@ function Game_draw()
 end
 
 function Fail_draw()
-    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80), (initial_height / 2))
-    love.graphics.print("Press space to try again.", (initial_width / 2 - 80), (initial_height / 2) + 20)
+    love.graphics.print("You made it to stage " .. stage .. ", but then dad got mad.", (initial_width / 2 - 130), (initial_height / 2))
+    love.graphics.print("Press enter to try again.", (initial_width / 2 - 80), (initial_height / 2) + 20)
 end
 
 function Fail_loop()
