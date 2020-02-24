@@ -39,10 +39,10 @@ local point_of_reference_options = {
     "water tower",
     "tree",
     "gas station",
-    "hotel", -- todo
+    "hotel",
     "windmill",
-    "barn", -- todo
-    "lighthouse" -- todo
+    "barn",
+    "lighthouse"
 }
 
 local update_loop
@@ -67,6 +67,20 @@ end
 
 local dad = Initial_dad()
 
+local direction_left_box = {
+    x = 360,
+    y = 155,
+    width = 20,
+    height = 40
+}
+
+local direction_right_box = {
+    x = 425,
+    y = 155,
+    width = 20,
+    height = 40
+}
+
 local chocolate_collision_box = {
     x = 160,
     y = 428,
@@ -81,14 +95,15 @@ local licorice_collision_box = {
     height = 60
 }
 
-local stripes_img = love.graphics.newImage("stripes.png")
+local stripes_img
 
-local scale_x = 1
-local scale_y = 1
 local debug = true
 
 function love.load()
+    math.randomseed(os.time())
     Populate_Directions()
+    stripes_img = love.graphics.newImage("stripes.png")
+
     car_image = love.graphics.newImage("car.png")
     wind_shield = love.graphics.newImage("windshield.png")
     arm_image = love.graphics.newImage("arm.png")
@@ -103,6 +118,10 @@ function love.load()
     point_of_reference_images["tree"] = love.graphics.newImage("tree.png")
     point_of_reference_images["gas station"] = love.graphics.newImage("gas station.png")
     point_of_reference_images["windmill"] = love.graphics.newImage("windmill.png")
+    point_of_reference_images["barn"] = love.graphics.newImage("barn.png")
+    point_of_reference_images["hotel"] = love.graphics.newImage("hotel.png")
+    point_of_reference_images["lighthouse"] = love.graphics.newImage("lighthouse.png")
+
     for i = 0, stripes_anim_count do
         stripes[i] = love.graphics.newQuad(30 * i, 0, 30, 60, stripes_img:getDimensions())
     end
@@ -110,8 +129,7 @@ function love.load()
     draw_loop = Menu_draw
     love.window.setTitle("Road trip")
     love.window.setMode(initial_width, initial_height, {
-        vsync = 1,
-        resizable  = true
+        vsync = 1
     })
 end
 
@@ -123,7 +141,6 @@ function love.update(delta)
 end
 
 function Game_loop(delta)
-
     distance_to_next_directions = math.max(distance_to_next_directions - delta, -1)
 
     if distance_to_next_directions < 0 then
@@ -202,12 +219,45 @@ function Game_loop(delta)
         stripes_anim_current = (stripes_anim_current + 1) % stripes_anim_count
     end
     anim_tick_counter = anim_tick_counter % strips_anim_length
+
+    if dad.prompting_for_directions and love.mouse.isDown(1) then
+        local x, y = Mouse_coordinates()
+        local dir = directions.notes[directions.current_direction].direction
+        if Is_inside({x = x, y = y}, direction_left_box) then
+            if dir == LEFT then
+                Set_points(150)
+            else
+                Set_points(-500)
+            end
+
+            distance_to_next_directions = math.random(7, 12)
+            dad.prompting_for_directions = false
+            directions.current_direction = directions.current_direction + 1
+        elseif Is_inside({x = x, y = y}, direction_right_box) then
+            if dir == RIGHT then
+                Set_points(150)
+            else
+                Set_points(-500)
+            end
+
+            distance_to_next_directions = math.random(7, 12)
+            dad.prompting_for_directions = false
+            directions.current_direction = directions.current_direction + 1
+        end
+    end
+
+    -- MAYBE THIS FIXES IT!
+    if directions.current_direction > #directions.notes then
+        Populate_Directions()
+        stage = stage + 1
+        directions.current_direction = 0
+    end
 end
 
 function Menu_update(delta)
     if love.mouse.isDown(1) then
         local x, y = love.mouse.getPosition()
-        if Is_inside({x = x, y = y}, {x = start_rect.x * scale_x, y = start_rect.y * scale_y, width = start_rect.width, height = start_rect.height}) then
+        if Is_inside({x = x, y = y}, start_rect) then
             update_loop = Game_loop
             draw_loop = Game_draw
             next_event = love.timer.getTime() + 2
@@ -222,11 +272,6 @@ function Menu_update(delta)
     end
 end
 
-function love.resize(width, height)
-    scale_x = width / initial_width
-    scale_y = height / initial_height
-end
-
 function love.draw()
     draw_loop()
 end
@@ -234,20 +279,20 @@ end
 function Draw_outline(box)
     love.graphics.rectangle(
         "line",
-        box.x * scale_x,
-        box.y * scale_y,
-        box.width * scale_x,
-        box.height * scale_y
+        box.x,
+        box.y,
+        box.width,
+        box.height
     )
 end
 
 function Draw_filled(box)
     love.graphics.rectangle(
         "fill",
-        box.x * scale_x,
-        box.y * scale_y,
-        box.width * scale_x,
-        box.height * scale_y
+        box.x,
+        box.y,
+        box.width,
+        box.height
     )
 end
 
@@ -256,7 +301,8 @@ function Set_points(extra_points)
 end
 
 function Is_inside(vec, rect)
-    return vec.x > rect.x and vec.x < rect.x + rect.width and vec.y > rect.y and vec.y < rect.y + rect.height
+    return vec.x > rect.x and vec.x < rect.x + rect.width
+     and vec.y > rect.y and vec.y < rect.y + rect.height
 end
 
 function Menu_draw()
@@ -264,45 +310,48 @@ function Menu_draw()
 end
 
 function Game_draw()
-    love.graphics.draw(car_image, 0, 0, 0, scale_x, scale_y)
-    love.graphics.draw(wind_shield, 0, 0, 0, scale_x, scale_y)
+    love.graphics.draw(car_image, 0, 0, 0)
+    love.graphics.draw(wind_shield, 0, 0, 0)
 
     if debug then
         Draw_outline(chocolate_collision_box)
         Draw_outline(licorice_collision_box)
     end
 
-    love.graphics.print("Remaining happiness: " .. math.floor(points), 5 * scale_x, 5 * scale_y, 0, scale_x, scale_y)
+    love.graphics.print("Remaining happiness: " .. math.floor(points), 5, 5, 0)
 
     if dad.expecting_candy then
-        love.graphics.draw(arm_image, 0, 4, 0, scale_x, scale_y)
+        love.graphics.draw(arm_image, 0, 4, 0)
     end
 
     local next_point_of_reference = point_of_reference_images[directions.notes[directions.current_direction].point_of_reference]
-    love.graphics.draw(next_point_of_reference, 404 * scale_x, 143 * scale_y, 0, scale_x * (1 - (distance_to_next_directions / 10)) , scale_y  * (1 - (distance_to_next_directions / 10)), 51, 86)
+    love.graphics.draw(next_point_of_reference, 404, 143, 0, 1 - math.max(distance_to_next_directions / 10, 0) , 1 - math.max(distance_to_next_directions / 10, 0), 51, 86)
 
-    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391 * scale_y, 143 * scale_y, 0, scale_x, scale_y)
+    love.graphics.draw(stripes_img, stripes[stripes_anim_current], 391, 143, 0)
 
     -- Draw directions
-    love.graphics.rectangle("fill", (initial_width / 4) * scale_x, directions.y * scale_y, 400 * scale_x, (initial_height - 120) * scale_y, 0, scale_x, scale_y)
+    love.graphics.rectangle("fill", (initial_width / 4), directions.y, 400, (initial_height - 120), 0)
     love.graphics.setColor(0, 0, 0)
-    for i = 0, #directions.notes -1 do
+    for i = 0, #directions.notes do
         local note = directions.notes[i]
-        love.graphics.print(Direction_to_string(note.direction) .. " at " .. note.point_of_reference, (initial_width / 4 + 30) * scale_x, (directions.y + 30 + 20 * i) * scale_y, 0, scale_x, scale_y)
+        love.graphics.print(Direction_to_string(note.direction) .. " at " .. note.point_of_reference, (initial_width / 4 + 30), (directions.y + 30 + 20 * i), 0)
     end
 
     local freq = Frequency()
-    love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
+    love.graphics.print(freq, 379, 327, 0)
     love.graphics.setColor(1, 1, 1)
 
     if dad.prompting_for_directions then
-        love.graphics.draw(twin_road, 0, 0, 0, scale_x, scale_y)
+
+        love.graphics.draw(twin_road, 0, 0, 0)
+        Draw_filled(direction_left_box)
+        Draw_filled(direction_right_box)
     end
 end
 
 function Fail_draw()
-    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80) * scale_x, (initial_height / 2) * scale_y)
-    love.graphics.print("Press space to try again.", (initial_width / 2 - 80) * scale_x, (initial_height / 2) + 20 * scale_y)
+    love.graphics.print("Dad got mad. You failed.", (initial_width / 2 - 80), (initial_height / 2))
+    love.graphics.print("Press space to try again.", (initial_width / 2 - 80), (initial_height / 2) + 20)
 end
 
 function Fail_loop()
@@ -321,7 +370,7 @@ end
 
 function Mouse_coordinates()
     local x, y = love.mouse.getPosition()
-    return x * scale_x, y * scale_y
+    return x, y
 end
 
 function New_dir_pair()
@@ -332,7 +381,7 @@ function New_dir_pair()
 end
 
 function Random_Direction()
-    if math.random() > 0.5 then
+    if math.random(1, 2) == 1 then
         return LEFT
     else
         return RIGHT
@@ -340,6 +389,7 @@ function Random_Direction()
 end
 
 function Random_PoI()
+    print(math.random(1, #point_of_reference_options))
     return point_of_reference_options[math.random(1, #point_of_reference_options)]
 end
 
