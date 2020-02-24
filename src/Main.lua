@@ -1,6 +1,6 @@
 local some_val = 0
 local next_event = 0
-local distance_to_next_directions = 1
+local distance_to_next_directions = 1200
 local next_frequency_update = 0
 local initial_height = 600
 local initial_width = 800
@@ -8,8 +8,8 @@ local max_points = 999
 local points = max_points
 local frequency_offset = 87.5
 local frequency_max = 108.0
-local current_frequency = 0
-local target_frequency = 0
+local current_frequency = 6.7
+local target_frequency = current_frequency
 local start_rect = {
     width = 80,
     height = 30,
@@ -22,6 +22,10 @@ local directions = {
     y = initial_height + 10,
     notes = {}
 }
+local current_music = math.random(1, 2)
+
+local static
+local music = {}
 
 local RIGHT = 0
 local LEFT = 1
@@ -87,6 +91,12 @@ function love.load()
     car_image = love.graphics.newImage("car.png")
     wind_shield = love.graphics.newImage("windshield.png")
     arm_image = love.graphics.newImage("arm.png")
+
+    music[0] = love.audio.newSource("rock1.wav", "static")
+    music[1] = love.audio.newSource("rock2.mp3", "static")
+    music[0]:setLooping(false)
+    music[1]:setLooping(false)
+    static = love.audio.newSource( "static.wav", "static")
     point_of_reference_images["water tower"] = love.graphics.newImage("watertower.png")
     for i = 0, stripes_anim_count do
         stripes[i] = love.graphics.newQuad(30 * i, 0, 30, 60, stripes_img:getDimensions())
@@ -98,11 +108,6 @@ function love.load()
         vsync = 1,
         resizable  = true
     })
-
-    --[[
-        TODO: Add music
-        TODO: Add static
-    ]]
 end
 
 function love.update(delta)
@@ -113,9 +118,28 @@ function love.update(delta)
 end
 
 function Game_loop(delta)
+    static:play()
+    if not music[0]:isPlaying() and not music[1]:isPlaying() then
+        current_music = current_music % 2
+        music[current_music]:play()
+    end
+
+    if target_frequency ~= current_frequency then
+        static:setVolume(math.min(0.5, math.abs(target_frequency - current_frequency)))
+    else
+        static:setVolume(0)
+    end
+
+    local frequency_diff = math.abs(target_frequency - current_frequency)
+
+    if frequency_diff == 0 then
+        music[current_music]:setVolume(1)
+    else
+        music[current_music]:setVolume(1 - frequency_diff * 2)
+    end
+
     some_val = some_val + 0.1 * delta
     next_event = next_event - delta
-    print(next_event)
     if next_event < love.timer.getTime() then
         Set_event(dad)
         next_event = love.timer.getTime() + math.random(15, 20)
@@ -251,9 +275,6 @@ function Game_draw()
     end
 
     local freq = Frequency()
-    if freq % 1 == 0 then
-        freq = freq .. ".0"
-    end
     love.graphics.print(freq, 379 * scale_x, 327 * scale_y, 0, scale_y, scale_y)
     love.graphics.setColor(1, 1, 1)
 end
@@ -274,7 +295,7 @@ function Frequency()
 end
 
 function Update_frequency(add_freq)
-    current_frequency = (current_frequency + add_freq) % (frequency_max - frequency_offset)
+    current_frequency = math.min(math.max(current_frequency + add_freq, 0), (frequency_max - frequency_offset))
 end
 
 function Mouse_coordinates()
